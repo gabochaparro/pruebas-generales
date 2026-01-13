@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>uWS Fast</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; background: #121212; color: white; }
+    .gauge { font-size: 3em; margin: 20px; color: #00ff88; }
+    .bar-container { width: 80%; background: #333; margin: auto; border-radius: 10px; }
+    .bar { height: 30px; width: 0%; background: #00ff88; border-radius: 10px; transition: width 0.5s; }
+  </style>
+</head>
+<body>
+    <div class="monitor-card">
+        <div class="gauge">uWS: <span id="cpu-val">0</span>%</div>
+        <div class="bar-container">
+            <div class="bar" id="cpu-bar"></div>
+        </div>
+    </div>
+<script>
+  let ws = new WebSocket('ws://localhost:3000/ws')
+  timerReconectarWS = null
+  function conectarWS() {
+    ws = new WebSocket('ws://localhost:3000/ws')
+    ws.onmessage = (e) => {
+      const dato = Number(JSON.parse(e.data).value)
+      console.log(dato)
+      document.getElementById('cpu-val').innerText = dato.toFixed(1)
+      document.getElementById('cpu-bar').style.width = dato + "%"
+    }
+    ws.onclose = (e) => {
+      console.log(`Ws cerrado`)
+      reconectarWS()
+    }
+  }
+  function reconectarWS() {
+    if (timerReconectarWS) return
+    setTimeout(() => {
+      timerReconectarWS = null
+      conectarWS()
+    },3699)
+  }
+  conectarWS()
+</script>
+
+</body>
+</html>
