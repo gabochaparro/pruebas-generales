@@ -4,6 +4,11 @@ const app = uWS.App();
 
 const PORT = process.env.PORT || 80;
 
+app.get('/', (res) => {
+  res.writeHeader('Content-Type', 'text/html')
+  res.end("Servidor uWS")
+})
+
 app.ws('/*', {
 
   open: (ws) => {
