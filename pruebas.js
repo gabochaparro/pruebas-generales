@@ -9,7 +9,7 @@ const indexHTML = fs.readFileSync(
 const clients = new Set()
 
 const app = uWS.App()
-const port = 3000
+const port = 80
 
 /* ---------- HTTP ---------- */
 app.get('/', (res, req) => {
