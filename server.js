@@ -1,27 +1,28 @@
-import uWS from 'uWebSockets.js'
-import fs from 'fs'
-import path from 'path'
+import uWS from 'uWebSockets.js';
 
-const indexHTML = fs.readFileSync(
-  path.resolve('index.html')
-)
+const app = uWS.App();
 
-const clients = new Set()
+const PORT = 80;
 
-const app = uWS.App()
-const port = 80
-
-/* ---------- HTTP ---------- */
-app.get('/', (res, req) => {
+app.get('/', (res) => {
   res.writeHeader('Content-Type', 'text/html')
-  res.end(indexHTML)
+  res.end("Servidor uWS")
 })
 
-/* ---------- WEBSOCKET ---------- */
-app.ws('/ws', {
-  compression: 0,
-  maxPayloadLength: 1024,
-  idleTimeout: 0,
+app.ws('/*', {
+  upgrade: (res, req, ctx) => {
+    res.upgrade(
+      {
+        ip: Buffer.from(res.getRemoteAddress()).join('.'),
+        token: req.getHeader('authorization'),
+        ua: req.getHeader('user-agent')
+      },
+      req.getHeader('sec-websocket-key'),
+      req.getHeader('sec-websocket-protocol'),
+      req.getHeader('sec-websocket-extensions'),
+      ctx
+    );
+  },
 
   open: (ws) => {
     ws.subscribe('bot');
@@ -34,15 +35,10 @@ app.ws('/ws', {
 
     // Broadcast a todos
     app.publish('bot', msg);
-  },
-
-  close(ws) {
-    clients.delete(ws)
   }
-})
+});
 
-app.listen(port, (token) => {
-  if (token) {
-    console.log(`uWS running on http://localhost:${port}`)
-  }
-})
+app.listen(PORT, (token) => {
+  if (token) console.log('uWS escuchando en', PORT);
+});
+
