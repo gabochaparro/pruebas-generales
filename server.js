@@ -1,18 +1,31 @@
-import uWS from 'uWebSockets.js';
+import uWS from 'uWebSockets.js'
+import fs from 'fs'
+import path from 'path'
 
-const app = uWS.App();
+const indexHTML = fs.readFileSync(
+  path.resolve('index.html')
+)
 
-const PORT = process.env.PORT;
+const clients = new Set()
 
-app.get('/', (res) => {
+const app = uWS.App()
+const port = 80
+
+/* ---------- HTTP ---------- */
+app.get('/', (res, req) => {
   res.writeHeader('Content-Type', 'text/html')
-  res.end("Servidor uWS")
+  res.end(indexHTML)
 })
 
+/* ---------- WEBSOCKET ---------- */
 app.ws('/ws', {
+  compression: 0,
+  maxPayloadLength: 1024,
+  idleTimeout: 0,
 
   open: (ws) => {
     ws.subscribe('bot');
+    console.log(`Conectado el cliente: ${ws.ip}`);
   },
 
   message: (ws, message) => {
@@ -21,10 +34,15 @@ app.ws('/ws', {
 
     // Broadcast a todos
     app.publish('bot', msg);
+  },
+
+  close(ws) {
+    clients.delete(ws)
   }
-});
+})
 
-app.listen(PORT, (token) => {
-  if (token) console.log('uWS escuchando en', PORT);
-});
-
+app.listen(port, (token) => {
+  if (token) {
+    console.log(`uWS running on http://localhost:${port}`)
+  }
+})
