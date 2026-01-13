@@ -2,7 +2,7 @@ import uWS from 'uWebSockets.js';
 
 const app = uWS.App();
 
-const PORT = process.env.PORT || 80;
+const PORT = process.env.PORT;
 
 app.get('/', (res) => {
   res.writeHeader('Content-Type', 'text/html')
