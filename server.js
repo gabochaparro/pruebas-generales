@@ -2,6 +2,8 @@ import uWS from 'uWebSockets.js';
 
 const app = uWS.App();
 
+const PORT = process.env.PORT || 80;
+
 app.ws('/*', {
   upgrade: (res, req, ctx) => {
     res.upgrade(
@@ -30,8 +32,6 @@ app.ws('/*', {
     app.publish('bot', msg);
   }
 });
-
-const PORT = process.env.PORT || 10000;
 
 app.listen(PORT, (token) => {
   if (token) console.log('uWS escuchando en', PORT);
