@@ -9,7 +9,7 @@ app.get('/', (res) => {
   res.end("Servidor uWS")
 })
 
-app.ws('/*', {
+app.ws('/ws', {
 
   open: (ws) => {
     ws.subscribe('bot');
