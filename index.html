@@ -18,10 +18,10 @@
         </div>
     </div>
 <script>
-  let ws = new WebSocket('ws://pruebasnodejs.onrender.com//ws')
+  let ws = new WebSocket('ws://pruebasnodejs.onrender.com/ws')
   timerReconectarWS = null
   function conectarWS() {
-    ws = new WebSocket('ws://pruebasnodejs.onrender.com//ws')
+    ws = new WebSocket('ws://pruebasnodejs.onrender.com/ws')
     ws.onmessage = (e) => {
       const dato = Number(JSON.parse(e.data).value)
       console.log(dato)
