@@ -1,51 +1,153 @@
-import uWS from 'uWebSockets.js'
-import fs from 'fs'
-import path from 'path'
+import { chromium } from "playwright"
 
-const indexHTML = fs.readFileSync(
-  path.resolve('index.html')
-)
+// Funciones principales:
+// ---------------------
+async function precioTVws(simboloDeseado) {
 
-const clients = new Set()
+    const browser = await chromium.launch({ headless: true })
+    const page = await browser.newPage()
 
-const app = uWS.App()
-const port = 80
+    page.on("websocket", (ws) => {
+        ws.on("framereceived", async (frame) => {
+            // Usamos una RegEx dinámica para el símbolo que elegimos
+            const regex = new RegExp(`"${simboloDeseado}"[^}]*?"lp":(\\d+\\.?\\d*)`); // [^}]* -> Significa "cualquier carácter que NO sea una llave de cierre"
+            const match = frame.payload.match(regex);
 
-/* ---------- HTTP ---------- */
-app.get('/', (res, req) => {
-  res.writeHeader('Content-Type', 'text/html')
-  res.end(indexHTML)
-})
+            if (match) {
+                //console.log(match[0]);
+                const symbol = match[0].split(",")[0].replaceAll('"', "");
+                const precio = match[1];
+                console.log(`✅ ${symbol}: ${precio} - (${new Date().toLocaleString()})`);
+                await verificarSR(precio)
+            }
+        })
 
-/* ---------- WEBSOCKET ---------- */
-app.ws('/ws', {
-  compression: 0,
-  maxPayloadLength: 1024,
-  idleTimeout: 0,
+        ws.on("close", async () => {
+            try {
+                console.log("Websocket cerrado. Recargando página...")
+                if (browser.isConnected()) {
+                    page.reload({ waitUntil: "load" })
+                } else {
+                    console.log("Abriendo la pagina de tradinview...")
+                    await page.goto("https://www.tradingview.com/chart/", { waitUntil: "load" })
+                    await page.keyboard.type(simboloDeseado)
+                    await page.keyboard.press("Enter")
+                }
+            } catch (error) {
+                console.log("Error al recargar la página", error)
+                console.log("Abriendo la pagina de tradinview...")
+                await page.goto("https://www.tradingview.com/chart/", { waitUntil: "load" })
+                await page.keyboard.type(simboloDeseado)
+                await page.keyboard.press("Enter")
+            }
+        })
+    })
 
-  open(ws) {
-    clients.add(ws)
-  },
+    while (true) {
+        try {
+            console.log("Abriendo la pagina de tradinview...")
+            await page.goto("https://www.tradingview.com/chart/", { waitUntil: "load" })
+            await page.keyboard.type(simboloDeseado)
+            await page.keyboard.press("Enter")
+            break
+        } catch (error) {
+            console.log("Error al cargar la página", error)
+        }
+    }
+}
 
-  close(ws) {
-    clients.delete(ws)
-  }
-})
+async function obtenerSR(sr) {
+    try {
+        console.log("\nCargando nuevos datos de soportes y resistencias...")
+        const url = `https://script.google.com/macros/s/AKfycbyJyyN7WFPtao1u_y8jgwsaKVYf2j8TL4vtg-Xe3kAotmBsUAEyFFjt2K-NgHauYxJjHw/exec?sr=${sr}`
+        const respuesta = await fetch(url)
+        const datos = await respuesta.json()
+        soportes = JSON.parse(datos.soportes)
+        resistencias = JSON.parse(datos.resistencias)
+        console.log("✅ Datos cargados.")
+    } catch (error) {
+        console.log("Error al obtener soportes y resistencias", error)
+    }
+}
 
-/* ---------- STREAM ---------- */
-setInterval(() => {
-  const data = JSON.stringify({
-    value: Math.random() * 100,
-    ts: Date.now()
-  })
+async function verificarSR(precio) {
 
-  for (const ws of clients) {
-    ws.send(data)
-  }
-}, 50) // 20 ticks/seg
+    // Verificamos soportes
+    let sopActivosNuevos = []
+    for (const soporte of soportes) {
+        if (Number(soporte[1]) / factor <= Number(precio) && Number(precio) <= Number(soporte[1]) * factor) {
+            console.log(`🔷 Soporte activo de ${soporte[2]} en ${soporte[1]}`)
+            sopActivosNuevos.push({ soporte: soporte })
+        }
+    }
+    if (!arraysSonIguales(sopActuales, sopActivosNuevos)) {
+        sopActuales = sopActivosNuevos
+        console.log("✅ Soportes activos actualizados.✅")
+        await enviarPrecio(url, precio)
+    }
 
-app.listen(port, (token) => {
-  if (token) {
-    console.log(`uWS running on http://localhost:${port}`)
-  }
-})
+    // Verificamos resistencias
+    let resActivasNuevos = []
+    for (const resistencia of resistencias) {
+        if (Number(resistencia[1]) / factor <= Number(precio) && Number(precio) <= Number(resistencia[1]) * factor) {
+            console.log(`🔶 Resistencia activa de ${resistencia[2]} en ${resistencia[1]}`)
+            resActivasNuevos.push({ resistencia: resistencia })
+        }
+    }
+    if (!arraysSonIguales(resActuales, resActivasNuevos)) {
+        resActuales = resActivasNuevos
+        console.log("✅ Resistencias activas actualizadas.✅")
+        await enviarPrecio(url, precio)
+    }
+}
+
+function arraysSonIguales(arr1, arr2) {
+    if (arr1.length !== arr2.length) return false
+
+    // Función auxiliar para convertir a string y comparar
+    const sorter = (a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))
+
+    // Creamos copias, ordenamos y comparamos
+    const s1 = JSON.stringify([...arr1].sort(sorter))
+    const s2 = JSON.stringify([...arr2].sort(sorter))
+
+    return s1 === s2
+}
+
+async function enviarPrecio(url, precio) {
+    url += `?verificarSR=${precio}`
+    console.log("Enviando precio: ", precio)
+    const respuesta = await fetch(url, {method: "POST"})
+    console.log(await respuesta.text())
+}
+
+async function main() {
+
+    Promise.all([
+        precioTVws(symbol),
+        obtenerSR("sr")
+    ])
+
+    // Volver a cargar los datos:
+    setInterval(async () => {
+        await obtenerSR("sr")
+    }, minutosParaRecargarSR * 60 * 1000)
+}
+// ---------------------
+
+// Variables globales:
+// ---------------------
+const symbol = "TVC:GOLD"
+let url = "https://script.google.com/macros/s/AKfycbyJyyN7WFPtao1u_y8jgwsaKVYf2j8TL4vtg-Xe3kAotmBsUAEyFFjt2K-NgHauYxJjHw/exec"
+let soportes = []
+let resistencias = []
+let sopActuales = []
+let resActuales = []
+const factor = 1.00126
+const minutosParaRecargarSR = 1
+// ---------------------
+
+// Funciones principales:
+// ---------------------
+main()
+// ---------------------
