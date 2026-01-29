@@ -1,0 +1,25 @@
+name: Disparador GC1!COMEX
+
+on:
+  workflow_dispatch: # Permite ejecutarlo manualmente para probar
+
+jobs:
+  sopres:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar NodeJS
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalar dependencias
+        run: |
+          npm init -y
+          npm install
+      
+      - name: Ejecutar script
+        run: node pruebas.js
