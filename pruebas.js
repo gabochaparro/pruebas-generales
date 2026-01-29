@@ -133,6 +133,7 @@ async function main() {
         await obtenerSR("sr")
         cicloActual++
         if (cicloActual >= cicloFinal) {
+            console.log("✅ Proceso finalizado.")
             process.exit()
         }
     }, minutosParaRecargarSR * 60 * 1000)
