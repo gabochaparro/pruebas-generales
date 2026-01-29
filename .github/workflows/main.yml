@@ -3,7 +3,7 @@ name: Obtener precio GC1!COMEX WS
 on:
   workflow_dispatch: # Permite ejecutarlo manualmente para probar
   repository_dispatch:
-    types: [Disparar Script]
+    types: [disparador]
 
 jobs:
   build:
