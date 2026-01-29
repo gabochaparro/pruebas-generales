@@ -131,6 +131,10 @@ async function main() {
     // Volver a cargar los datos:
     setInterval(async () => {
         await obtenerSR("sr")
+        cicloActual++
+        if (cicloActual >= cicloFinal) {
+            process.exit()
+        }
     }, minutosParaRecargarSR * 60 * 1000)
 }
 // ---------------------
@@ -145,6 +149,8 @@ let sopActuales = []
 let resActuales = []
 const factor = 1.00126
 const minutosParaRecargarSR = 1
+const cicloFinal = 3
+let cicloActual = 0
 // ---------------------
 
 // Funciones principales:
