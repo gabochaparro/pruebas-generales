@@ -21,5 +21,8 @@ jobs:
           npm init -y
           npm install
       
+      - name: Instalar navegadores de Playwright
+        run: npx playwright install chromium --with-deps
+      
       - name: Ejecutar script
         run: node pruebas.js
