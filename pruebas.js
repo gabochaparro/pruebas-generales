@@ -121,6 +121,12 @@ async function enviarPrecio(url, precio) {
     console.log(await respuesta.text())
 }
 
+async function dispararGitHubActions() {
+    url += "?disparar=precio_ws"
+    const respuesta = await fetch(url)
+    console.log(await respuesta.text())
+}
+
 async function main() {
 
     Promise.all([
@@ -133,7 +139,8 @@ async function main() {
         await obtenerSR("sr")
         cicloActual++
         if (cicloActual >= cicloFinal) {
-            console.log("✅ Proceso finalizado.")
+            console.log("✅ Proceso finalizado. Disparando GitHub Actions...")
+            await dispararGitHubActions()
             process.exit()
         }
     }, minutosParaRecargarSR * 60 * 1000)
