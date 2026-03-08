@@ -1,47 +1,133 @@
 <!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>uWS Fast</title>
-  <style>
-    body { font-family: sans-serif; text-align: center; background: #121212; color: white; }
-    .gauge { font-size: 3em; margin: 20px; color: #00ff88; }
-    .bar-container { width: 80%; background: #333; margin: auto; border-radius: 10px; }
-    .bar { height: 30px; width: 0%; background: #00ff88; border-radius: 10px; transition: width 0.5s; }
-  </style>
-</head>
-<body>
-    <div class="monitor-card">
-        <div class="gauge">uWS: <span id="cpu-val">0</span>%</div>
-        <div class="bar-container">
-            <div class="bar" id="cpu-bar"></div>
-        </div>
-    </div>
-<script>
-  let ws = new WebSocket('wss://pruebasnodejs.onrender.com/ws')
-  timerReconectarWS = null
-  function conectarWS() {
-    ws = new WebSocket('wss://pruebasnodejs.onrender.com/ws')
-    ws.onmessage = (e) => {
-      const dato = Number(JSON.parse(e.data).value)
-      console.log(dato)
-      document.getElementById('cpu-val').innerText = dato.toFixed(1)
-      document.getElementById('cpu-bar').style.width = dato + "%"
-    }
-    ws.onclose = (e) => {
-      console.log(`Ws cerrado`)
-      reconectarWS()
-    }
-  }
-  function reconectarWS() {
-    if (timerReconectarWS) return
-    setTimeout(() => {
-      timerReconectarWS = null
-      conectarWS()
-    },3699)
-  }
-  conectarWS()
-</script>
+<html lang="en" data-theme="dark">
 
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexusTrade | Premium Trading Journal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <nav id="sidebar">
+        <div class="brand">
+            <i data-lucide="zap"></i>
+            <span>NexusTrade</span>
+        </div>
+        <ul class="nav-links">
+            <li class="nav-item"><a class="nav-link active" data-page="dashboard"><i data-lucide="layout-dashboard"></i>
+                    <span>Dashboard</span></a></li>
+            <li class="nav-item"><a class="nav-link" data-page="trades"><i data-lucide="bar-chart-2"></i>
+                    <span>Trades</span></a></li>
+            <li class="nav-item"><a class="nav-link" data-page="analytics"><i data-lucide="pie-chart"></i>
+                    <span>Analytics</span></a></li>
+            <li class="nav-item"><a class="nav-link" data-page="journal"><i data-lucide="book-open"></i>
+                    <span>Journal</span></a></li>
+            <li class="nav-item"><a class="nav-link" data-page="calendar"><i data-lucide="calendar"></i> <span>Eco
+                        Calendar</span></a></li>
+            <li class="nav-item"><a class="nav-link" data-page="active"><i data-lucide="activity"></i> <span>Active
+                        Trades</span></a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <a class="nav-link" data-page="settings"><i data-lucide="settings"></i> <span>Settings</span></a>
+        </div>
+    </nav>
+
+    <main id="content">
+        <!-- Dynamic Content Injected Here -->
+        <div id="page-container">
+            <div class="header-row">
+                <h1 id="page-title">Dashboard</h1>
+                <div class="actions">
+                    <button class="btn btn-primary" id="sync-mt5">
+                        <i data-lucide="refresh-cw"></i> Sync MT5
+                    </button>
+                </div>
+            </div>
+
+            <div id="page-content">
+                <!-- Dashboard Default Content -->
+                <div class="dashboard-grid">
+                    <div class="card">
+                        <div class="stat-label">Today's P/L</div>
+                        <div class="stat-value profit-text">+$1,240.50</div>
+                        <div class="stat-label" style="font-size: 0.75rem;">+2.4% today</div>
+                    </div>
+                    <div class="card">
+                        <div class="stat-label">Win Rate</div>
+                        <div class="stat-value">68%</div>
+                        <div class="stat-label" style="font-size: 0.75rem;">Last 30 days</div>
+                    </div>
+                    <div class="card">
+                        <div class="stat-label">Profit Factor</div>
+                        <div class="stat-value">2.45</div>
+                        <div class="stat-label" style="font-size: 0.75rem;">Healthy</div>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top: 24px;">
+                    <h3 style="margin-bottom: 20px;">Equity Curve</h3>
+                    <canvas id="equityChart" height="100"></canvas>
+                </div>
+
+                <div class="dashboard-grid" style="margin-top: 24px;">
+                    <div class="card" style="grid-column: span 2;">
+                        <h3 style="margin-bottom: 20px;">Recent Trades</h3>
+                        <div id="recent-trades-list">
+                            <!-- Mock Trade Rows -->
+                            <div
+                                style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border);">
+                                <span>NAS100 <small style="color: var(--text-muted)">BUY</small></span>
+                                <span class="profit-text">+$450.00</span>
+                            </div>
+                            <div
+                                style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border);">
+                                <span>XAUUSD <small style="color: var(--text-muted)">SELL</small></span>
+                                <span class="loss-text">-$120.00</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; padding: 12px 0;">
+                                <span>GBPUSD <small style="color: var(--text-muted)">BUY</small></span>
+                                <span class="profit-text">+$780.00</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3 style="margin-bottom: 20px;">Risk Guardrails</h3>
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                            <div style="width: 12px; height: 12px; border-radius: 50%; background: var(--profit);">
+                            </div>
+                            <span>Daily Loss Limit: Safe</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                            <div style="width: 12px; height: 12px; border-radius: 50%; background: var(--profit);">
+                            </div>
+                            <span>Weekly Drawdown: 1.2% / 5%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Mobile Bottom Navigation -->
+    <div class="bottom-nav">
+        <a class="nav-link active" data-page="dashboard"><i data-lucide="layout-dashboard"></i> <span>Home</span></a>
+        <a class="nav-link" data-page="trades"><i data-lucide="bar-chart-2"></i> <span>Trades</span></a>
+        <a class="nav-link" data-page="analytics"><i data-lucide="pie-chart"></i> <span>Stats</span></a>
+        <a class="nav-link" data-page="journal"><i data-lucide="book-open"></i> <span>Journal</span></a>
+        <a class="nav-link" data-page="calendar"><i data-lucide="calendar"></i> <span>Cal</span></a>
+    </div>
+
+    <script src="app.js"></script>
 </body>
+
 </html>
